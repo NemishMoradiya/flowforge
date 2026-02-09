@@ -1,10 +1,10 @@
 "use client";
 import { useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
 export default function Home() {
   useEffect(() => {
-    supabase.auth.getSession().then(console.log);
+    supabaseBrowser.auth.getSession().then(console.log);
   }, []);
 
   return <div>Supabase test</div>;

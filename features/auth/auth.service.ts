@@ -1,7 +1,7 @@
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
 export async function register(email: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabaseBrowser.auth.signUp({
     email,
     password,
   });
@@ -9,7 +9,7 @@ export async function register(email: string, password: string) {
   if (error) throw error;
 
   if (data.user) {
-    await supabase.from("users").insert({
+    await supabaseBrowser.from("users").insert({
       id: data.user.id,
       email: data.user.email,
       role: "client",
@@ -20,7 +20,7 @@ export async function register(email: string, password: string) {
 }
 
 export async function login(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabaseBrowser.auth.signInWithPassword({
     email,
     password,
   });

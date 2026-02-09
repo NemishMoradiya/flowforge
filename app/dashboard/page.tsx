@@ -1,9 +1,7 @@
-"use client";
+import { getCurrentUser } from "@/features/auth/getCurrentUser";
 
-import { useCurrentUser } from "@/features/auth/useCurrentUser";
-
-export default function Dashboard() {
-  const { data: user } = useCurrentUser();
+export default async function Dashboard() {
+  const user = await getCurrentUser();
 
   if (!user) return null;
 

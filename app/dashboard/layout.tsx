@@ -1,26 +1,14 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/features/auth/getCurrentUser";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useCurrentUser } from "@/features/auth/useCurrentUser";
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const { data: user, isLoading } = useCurrentUser();
+  const user = await getCurrentUser();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading) return <div>Loading...</div>;
-
-  if (!user) return null;
+  if (!user) redirect("/login");
 
   return (
     <div className="p-6">
