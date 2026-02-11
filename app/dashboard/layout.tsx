@@ -11,12 +11,15 @@ export default async function DashboardLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="p-6">
-      <div className="mb-4">
-        Logged in as: <b>{user.email}</b> ({user.role})
-      </div>
+    <div className="flex h-screen overflow-hidden">
+      {/* Sidebar */}
 
-      {children}
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto bg-background p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

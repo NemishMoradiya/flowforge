@@ -9,13 +9,22 @@ export async function getCurrentUser() {
 
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const { data: membership, error } = await supabase
+    .from("organization_members")
+    .select("role, organization_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (error) throw error;
 
-  return data;
+  if (!membership) {
+    throw new Error("User has no organization membership");
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    role: membership.role,
+    organizationId: membership.organization_id,
+  };
 }
