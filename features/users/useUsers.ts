@@ -1,10 +1,10 @@
 "use client";
 
 import useSWR from "swr";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 
 async function fetchUsers() {
-  const { data, error } = await supabase.from("users").select("*");
+  const { data, error } = await supabaseBrowser.from("users").select("*");
 
   if (error) throw error;
 

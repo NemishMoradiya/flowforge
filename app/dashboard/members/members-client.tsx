@@ -19,8 +19,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Mail, Copy, Check } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Copy,
+  Check,
+  UserPlus,
+  Shield,
+  Eye,
+} from "lucide-react";
+
+const ROLE_INFO = {
+  admin: {
+    label: "Admin",
+    description: "Full access to all features and settings",
+    icon: Shield,
+    badge: "destructive" as const,
+  },
+  manager: {
+    label: "Manager",
+    description: "Can manage projects and view team members",
+    icon: UserPlus,
+    badge: "default" as const,
+  },
+  client: {
+    label: "Client",
+    description: "View-only access to assigned projects",
+    icon: Eye,
+    badge: "secondary" as const,
+  },
+};
 
 export default function MembersClient() {
   const [email, setEmail] = useState("");
@@ -28,6 +58,8 @@ export default function MembersClient() {
   const [loading, setLoading] = useState(false);
   const [lastToken, setLastToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const currentRole = ROLE_INFO[role as keyof typeof ROLE_INFO];
 
   async function handleInvite() {
     if (!email) {
@@ -58,13 +90,14 @@ export default function MembersClient() {
       setCopied(true);
       toast.success("Invite link copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy to clipboard");
     }
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Invite Members</h1>
         <p className="text-muted-foreground">
@@ -72,6 +105,7 @@ export default function MembersClient() {
         </p>
       </div>
 
+      {/* Invite Form Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -92,6 +126,7 @@ export default function MembersClient() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
+              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
             />
           </div>
 
@@ -102,17 +137,24 @@ export default function MembersClient() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="client">Client</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                {Object.entries(ROLE_INFO).map(([key, info]) => (
+                  <SelectItem key={key} value={key}>
+                    <div className="flex items-center gap-2">
+                      <info.icon className="h-3.5 w-3.5" />
+                      {info.label}
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">
-              {role === "admin" && "Full access to all features and settings"}
-              {role === "manager" &&
-                "Can manage projects and view team members"}
-              {role === "client" && "View-only access to assigned projects"}
-            </p>
+            {currentRole && (
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/50 p-3">
+                <currentRole.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  {currentRole.description}
+                </p>
+              </div>
+            )}
           </div>
 
           <Button
@@ -135,10 +177,14 @@ export default function MembersClient() {
         </CardContent>
       </Card>
 
+      {/* Invite Link Card */}
       {lastToken && (
-        <Card>
+        <Card className="border-green-500/20 bg-green-500/5">
           <CardHeader>
-            <CardTitle>Invite Link Generated</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <Check className="h-5 w-5" />
+              Invite Link Generated
+            </CardTitle>
             <CardDescription>
               Share this link with the invited member
             </CardDescription>
@@ -146,9 +192,9 @@ export default function MembersClient() {
           <CardContent className="space-y-3">
             <div className="flex gap-2">
               <Input
-                value={`${window.location.origin}/invite?token=${lastToken}`}
+                value={`${typeof window !== "undefined" ? window.location.origin : ""}/invite?token=${lastToken}`}
                 readOnly
-                className="font-mono text-sm"
+                className="font-mono text-xs"
               />
               <Button variant="outline" size="icon" onClick={copyToken}>
                 {copied ? (
@@ -158,7 +204,10 @@ export default function MembersClient() {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Badge variant="outline" className="text-[10px]">
+                24h
+              </Badge>
               This link expires in 24 hours
             </p>
           </CardContent>
