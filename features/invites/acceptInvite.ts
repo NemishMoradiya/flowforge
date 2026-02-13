@@ -1,11 +1,19 @@
 "use server";
 
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/features/auth/getCurrentUser";
+import { cookies } from "next/headers";
 
-export async function acceptInvite(token: string) {
+export async function acceptInvite() {
   const supabase = await createSupabaseServer();
-  const user = await getCurrentUser();
+
+  const cookieStore = await cookies();
+
+  const token = cookieStore.get("invite_token")?.value;
+  if (!token) throw new Error("Missing invite token");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) throw new Error("Unauthorized");
 
@@ -16,7 +24,19 @@ export async function acceptInvite(token: string) {
     .single();
 
   if (error || !invite) {
-    throw new Error("Invalid or expired invite");
+    cookieStore.delete("invite_token");
+    throw new Error("Invalid invite");
+  }
+
+  if (new Date(invite.expires_at) < new Date()) {
+    cookieStore.delete("invite_token");
+    throw new Error("Invite expired");
+  }
+
+  if (invite.email !== user.email) {
+    await supabase.auth.signOut();
+    cookieStore.delete("invite_token");
+    throw new Error("Email mismatch");
   }
 
   await supabase.from("organization_members").insert({
@@ -26,4 +46,6 @@ export async function acceptInvite(token: string) {
   });
 
   await supabase.from("organization_invites").delete().eq("id", invite.id);
+
+  cookieStore.delete("invite_token");
 }

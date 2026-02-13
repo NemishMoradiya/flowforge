@@ -12,6 +12,20 @@ export async function createSupabaseServer() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
+        set(name: string, value: string, options: Record<string, unknown>) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Ignored in Server Components — only works in Server Actions/Route Handlers
+          }
+        },
+        remove(name: string, options: Record<string, unknown>) {
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // Ignored in Server Components — only works in Server Actions/Route Handlers
+          }
+        },
       },
     },
   );

@@ -1,5 +1,5 @@
 import { acceptInvite } from "@/features/invites/acceptInvite";
-import { getCurrentUser } from "@/features/auth/getCurrentUser";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import {
   Card,
@@ -9,62 +9,32 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Zap } from "lucide-react";
+import { XCircle } from "lucide-react";
 import Link from "next/link";
 
-export default async function InvitePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ token?: string }>;
-}) {
-  const { token } = await searchParams;
+export default async function InvitePage() {
+  const supabase = await createSupabaseServer();
 
-  if (!token) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-              <XCircle className="h-7 w-7 text-destructive" />
-            </div>
-            <CardTitle>Invalid Invite</CardTitle>
-            <CardDescription>
-              This invitation link is invalid or has expired.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Link href="/login">
-              <Button variant="outline">Go to Login</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect(`/login?redirect=/invite?token=${token}`);
-  }
+  if (!user) redirect("/login");
 
   try {
-    await acceptInvite(token);
+    await acceptInvite();
   } catch {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background via-background to-primary/5 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-              <XCircle className="h-7 w-7 text-destructive" />
-            </div>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <XCircle className="mx-auto h-8 w-8 text-destructive" />
             <CardTitle>Invitation Error</CardTitle>
             <CardDescription>
-              This invitation could not be accepted. It may have expired or
-              already been used.
+              This invitation could not be accepted.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center">
+          <CardContent>
             <Link href="/dashboard">
               <Button variant="outline">Go to Dashboard</Button>
             </Link>
