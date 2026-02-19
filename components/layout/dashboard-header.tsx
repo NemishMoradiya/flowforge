@@ -27,7 +27,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
   const initials = user.email?.slice(0, 2).toUpperCase() ?? "FF";
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-sm">
+    <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-sm">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-5!" />
 

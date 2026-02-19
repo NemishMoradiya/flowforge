@@ -14,34 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "sonner";
 import { Loader2, Zap } from "lucide-react";
+import uselogin from "./uselogin";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await login(email, password);
-      toast.success("Welcome back!");
-      router.push("/dashboard");
-    } catch (error: any) {
-      toast.error(error.message || "Invalid email or password");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { handleSubmit, email, setEmail, password, setPassword, loading } =
+    uselogin();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background via-background to-primary/5 p-4">

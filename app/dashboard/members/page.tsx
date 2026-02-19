@@ -14,6 +14,7 @@ import Link from "next/link";
 
 export default async function MembersPage() {
   const user = await getCurrentUser();
+  console.log("CURRENT USER:", user);
 
   if (!user) throw new Error("Unauthorized");
 

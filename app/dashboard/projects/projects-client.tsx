@@ -27,7 +27,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import {
   Loader2,
   Plus,
@@ -42,7 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from "next/navigation";
+import useProjectClient from "./useProjectClient";
 
 interface ProjectsClientProps {
   projects: any[];
@@ -53,64 +52,26 @@ export default function ProjectsClient({
   projects,
   role,
 }: ProjectsClientProps) {
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const isAdmin = role === "admin";
-
-  async function handleCreate() {
-    if (!name.trim()) {
-      toast.error("Please enter a project name");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await createProject(name.trim());
-      toast.success("Project created successfully");
-      setName("");
-      setCreateDialogOpen(false);
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create project");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleUpdate(id: string) {
-    if (!editName.trim()) {
-      toast.error("Project name cannot be empty");
-      return;
-    }
-
-    try {
-      await updateProject(id, editName.trim());
-      toast.success("Project updated");
-      setEditingId(null);
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update project");
-    }
-  }
-
-  async function handleDelete(id: string) {
-    try {
-      await deleteProject(id);
-      toast.success("Project deleted");
-      setDeleteDialogOpen(false);
-      setDeletingId(null);
-      router.refresh();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete project");
-    }
-  }
+  const {
+    name,
+    setName,
+    loading,
+    setLoading,
+    editingId,
+    setEditingId,
+    editName,
+    setEditName,
+    createDialogOpen,
+    setCreateDialogOpen,
+    deleteDialogOpen,
+    setDeleteDialogOpen,
+    deletingId,
+    setDeletingId,
+    isAdmin,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+  } = useProjectClient(role);
 
   return (
     <div className="space-y-6">
