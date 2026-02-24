@@ -24,6 +24,7 @@ export default function RegisterPage() {
     confirmPassword,
     setConfirmPassword,
     loading,
+    token,
   } = useRegister();
 
   return (
@@ -153,7 +154,7 @@ export default function RegisterPage() {
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href={token ? `/login?token=${token}` : "/login"}
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
             Sign in

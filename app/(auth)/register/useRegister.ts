@@ -1,14 +1,17 @@
 import { register } from "@/features/auth/auth.service";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
 const useRegister = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const token = searchParams.get("token");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,7 +35,7 @@ const useRegister = () => {
     try {
       await register(email, password);
       toast.success("Account created successfully!");
-      router.push("/dashboard");
+      router.push(token ? `/invite?token=${token}` : "/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Failed to create account");
     } finally {
@@ -48,6 +51,7 @@ const useRegister = () => {
     confirmPassword,
     setConfirmPassword,
     loading,
+    token,
   };
 };
 

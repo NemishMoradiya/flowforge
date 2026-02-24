@@ -18,8 +18,15 @@ import { Loader2, Zap } from "lucide-react";
 import uselogin from "./uselogin";
 
 export default function LoginPage() {
-  const { handleSubmit, email, setEmail, password, setPassword, loading } =
-    uselogin();
+  const {
+    handleSubmit,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    loading,
+    token,
+  } = uselogin();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background via-background to-primary/5 p-4">
@@ -133,7 +140,7 @@ export default function LoginPage() {
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
-            href="/register"
+            href={token ? `/register?token=${token}` : "/register"}
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
             Create one

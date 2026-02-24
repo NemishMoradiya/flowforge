@@ -156,12 +156,12 @@ export default function MembersClient() {
                 )}
               </Button>
             </div>
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Badge variant="outline" className="text-[10px]">
                 24h
               </Badge>
               This link expires in 24 hours
-            </p>
+            </div>
           </CardContent>
         </Card>
       )}

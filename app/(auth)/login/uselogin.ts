@@ -1,6 +1,7 @@
 "use client";
 import { login } from "@/features/auth/auth.service";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +10,9 @@ const uselogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,7 +26,7 @@ const uselogin = () => {
     try {
       await login(email, password);
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      router.push(token ? `/invite?token=${token}` : "/dashboard");
     } catch (error: any) {
       toast.error(error.message || "Invalid email or password");
     } finally {
@@ -36,6 +40,7 @@ const uselogin = () => {
     password,
     setPassword,
     loading,
+    token,
   };
 };
 

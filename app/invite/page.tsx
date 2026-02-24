@@ -1,48 +1,31 @@
-import { acceptInvite } from "@/features/invites/acceptInvite";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { XCircle } from "lucide-react";
-import Link from "next/link";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import AcceptInviteButton from "./accept-button";
 
-export default async function InvitePage() {
+export default async function InvitePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ token?: string }>;
+}) {
+  const { token } = await searchParams;
+
+  if (!token) redirect("/dashboard");
+
+  const inviteToken = token;
+
   const supabase = await createSupabaseServer();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
-
-  try {
-    await acceptInvite();
-  } catch {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <XCircle className="mx-auto h-8 w-8 text-destructive" />
-            <CardTitle>Invitation Error</CardTitle>
-            <CardDescription>
-              This invitation could not be accepted.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/dashboard">
-              <Button variant="outline">Go to Dashboard</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!user) {
+    redirect(`/login?token=${token}`);
   }
 
-  redirect("/dashboard");
+  return (
+    <div>
+      <h1>You've been invited</h1>
+      <AcceptInviteButton token={inviteToken} />
+    </div>
+  );
 }
