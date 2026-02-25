@@ -16,3 +16,16 @@ export async function updateUserRole(id: string, role: string) {
 
   if (error) throw error;
 }
+
+export async function debugPeople(orgId: string) {
+  const supabase = await createSupabaseServer();
+
+  const { data, error } = await supabase.rpc("get_organization_people", {
+    org_id: orgId,
+  });
+
+  console.log("PEOPLE:", data);
+  console.log("ERROR:", error);
+
+  return data;
+}
