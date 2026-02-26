@@ -1,7 +1,11 @@
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { provisionUserOrg } from "./actions";
 
-export async function register(email: string, password: string) {
+export async function register(
+  email: string,
+  password: string,
+  token?: string | null,
+) {
   const { data, error } = await supabaseBrowser.auth.signUp({
     email,
     password,
@@ -10,7 +14,9 @@ export async function register(email: string, password: string) {
   if (error) throw error;
 
   if (data.user) {
-    await provisionUserOrg();
+    if (!token) {
+      await provisionUserOrg();
+    }
   }
 
   return data;

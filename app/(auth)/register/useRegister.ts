@@ -33,7 +33,7 @@ const useRegister = () => {
 
     setLoading(true);
     try {
-      await register(email, password);
+      await register(email, password, token);
       toast.success("Account created successfully!");
       router.push(token ? `/invite?token=${token}` : "/dashboard");
     } catch (error: any) {

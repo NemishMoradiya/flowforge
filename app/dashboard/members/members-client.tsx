@@ -5,6 +5,7 @@ import { inviteUser } from "@/features/invites/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTransition } from "react";
 import {
   Select,
   SelectContent,
@@ -26,141 +27,192 @@ import {
   Mail,
   Copy,
   Check,
-  UserPlus,
   Shield,
   Eye,
+  UserPlus,
 } from "lucide-react";
-import useMemberClient from "./useMemberClient";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
-export default function MembersClient() {
-  const {
-    ROLE_INFO,
-    email,
-    setEmail,
-    role,
-    setRole,
-    loading,
-    lastToken,
-    copied,
-    handleInvite,
-    copyToken,
-    currentRole,
-  } = useMemberClient();
+type Person = {
+  id: string;
+  email: string;
+  role: string;
+  status: "active" | "invited";
+  created_at: string;
+};
+
+const ROLE_INFO = {
+  admin: {
+    label: "Admin",
+    description: "Full access to all features and settings",
+    icon: Shield,
+  },
+  manager: {
+    label: "Manager",
+    description: "Can manage projects and view team members",
+    icon: UserPlus,
+  },
+  client: {
+    label: "Client",
+    description: "View-only access",
+    icon: Eye,
+  },
+};
+
+export default function MembersClient({
+  people,
+  currentUserRole,
+}: {
+  people: Person[];
+  currentUserRole: string;
+}) {
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("client");
+  const [loading, setLoading] = useState(false);
+  const [lastToken, setLastToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  const router = useRouter();
+
+  const isAdmin = currentUserRole === "admin";
+  async function handleInvite() {
+    if (!email) return toast.error("Enter email");
+
+    setLoading(true);
+
+    try {
+      const token = await inviteUser(email, role);
+      setLastToken(token);
+      toast.success("Invite sent");
+      setEmail("");
+
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copyToken() {
+    if (!lastToken) return;
+
+    await navigator.clipboard.writeText(
+      `${window.location.origin}/invite?token=${lastToken}`,
+    );
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Invite Members</h1>
-        <p className="text-muted-foreground">
-          Send invitations to add new team members to your organization
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      {/* MEMBERS LIST */}
 
-      {/* Invite Form Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Send Invitation
-          </CardTitle>
+          <CardTitle>Team Members</CardTitle>
           <CardDescription>
-            Enter the email address and role for the new member
+            Active members and pending invitations
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="colleague@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              onKeyDown={(e) => e.key === "Enter" && handleInvite()}
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={setRole} disabled={loading}>
-              <SelectTrigger id="role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(ROLE_INFO).map(([key, info]) => (
-                  <SelectItem key={key} value={key}>
-                    <div className="flex items-center gap-2">
-                      <info.icon className="h-3.5 w-3.5" />
-                      {info.label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {currentRole && (
-              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/50 p-3">
-                <currentRole.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">
-                  {currentRole.description}
-                </p>
+        <CardContent className="space-y-3">
+          {isPending ? (
+            <div className="text-xs text-muted-foreground flex justify-center items-center my-10">
+              <Spinner className="size-6" />
+            </div>
+          ) : (
+            people.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between rounded-lg border p-3"
+              >
+                <div>
+                  <p className="text-sm font-medium">{p.email}</p>
+                  <p className="text-xs text-muted-foreground">{p.role}</p>
+                </div>
+
+                <Badge
+                  variant={p.status === "active" ? "default" : "secondary"}
+                >
+                  {p.status}
+                </Badge>
               </div>
-            )}
-          </div>
-
-          <Button
-            onClick={handleInvite}
-            disabled={loading || !email}
-            className="w-full"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sending invite...
-              </>
-            ) : (
-              <>
-                <Mail className="mr-2 h-4 w-4" />
-                Send Invitation
-              </>
-            )}
-          </Button>
+            ))
+          )}
         </CardContent>
       </Card>
 
-      {/* Invite Link Card */}
-      {lastToken && (
-        <Card className="border-green-500/20 bg-green-500/5">
+      {/* INVITE FORM (ADMIN ONLY) */}
+
+      {isAdmin && (
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
-              <Check className="h-5 w-5" />
-              Invite Link Generated
-            </CardTitle>
-            <CardDescription>
-              Share this link with the invited member
-            </CardDescription>
+            <CardTitle>Invite Member</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Email</Label>
+              <Input
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {Object.keys(ROLE_INFO).map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {r}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button onClick={handleInvite} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Invite
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* INVITE LINK */}
+
+      {lastToken && (
+        <Card>
+          <CardContent className="space-y-2 pt-6">
             <div className="flex gap-2">
               <Input
-                value={`${typeof window !== "undefined" ? window.location.origin : ""}/invite?token=${lastToken}`}
                 readOnly
-                className="font-mono text-xs"
+                value={`${window.location.origin}/invite?token=${lastToken}`}
               />
-              <Button variant="outline" size="icon" onClick={copyToken}>
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
+              <Button size="icon" variant="outline" onClick={copyToken}>
+                {copied ? <Check /> : <Copy />}
               </Button>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Badge variant="outline" className="text-[10px]">
-                24h
-              </Badge>
-              This link expires in 24 hours
             </div>
           </CardContent>
         </Card>
