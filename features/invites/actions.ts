@@ -5,8 +5,10 @@ import { getCurrentUser } from "@/features/auth/getCurrentUser";
 import crypto from "crypto";
 
 export async function inviteUser(email: string, role: string) {
+  console.log("INVITE ACTION CALLED", { email, role });
   const supabase = await createSupabaseServer();
   const user = await getCurrentUser();
+  console.log("CURRENT USER IN INVITE:", user);
 
   if (!user) throw new Error("Unauthorized");
   if (user.role !== "admin") throw new Error("Forbidden");
@@ -38,4 +40,48 @@ export async function inviteUser(email: string, role: string) {
   }
 
   return token;
+}
+
+export async function acceptInviteAfterSignup(token: string) {
+  const supabase = await createSupabaseServer();
+
+  // 1. Get invite
+  const { data: invite, error } = await supabase
+    .from("organization_invites")
+    .select("*")
+    .eq("token", token)
+    .is("accepted_at", null)
+    .single();
+
+  if (error || !invite) {
+    throw new Error("Invalid or expired invite");
+  }
+
+  // 2. Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("User not authenticated");
+
+  // 3. Insert into organization_members
+  const { error: insertError } = await supabase
+    .from("organization_members")
+    .insert({
+      organization_id: invite.organization_id,
+      user_id: user.id,
+      role: invite.role,
+    });
+
+  if (insertError) throw insertError;
+
+  // 4. Mark invite accepted
+  const { error: updateError } = await supabase
+    .from("organization_invites")
+    .update({ accepted_at: new Date().toISOString() })
+    .eq("id", invite.id);
+
+  if (updateError) throw updateError;
+
+  return true;
 }

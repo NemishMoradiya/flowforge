@@ -1,84 +1,115 @@
-import { inviteUser } from "@/features/invites/actions";
-import { Eye, Shield, UserPlus } from "lucide-react";
-import React, { useState } from "react";
-import { toast } from "sonner";
+"use client";
 
-const ROLE_INFO = {
+import { useState, useTransition, useMemo, useCallback } from "react";
+import { inviteUser } from "@/features/invites/actions";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Shield, Eye, UserPlus } from "lucide-react";
+
+type Role = "admin" | "manager" | "client";
+
+export const ROLE_INFO: Record<
+  Role,
+  {
+    label: string;
+    description: string;
+    icon: any;
+  }
+> = {
   admin: {
     label: "Admin",
     description: "Full access to all features and settings",
     icon: Shield,
-    badge: "destructive" as const,
   },
   manager: {
     label: "Manager",
     description: "Can manage projects and view team members",
     icon: UserPlus,
-    badge: "default" as const,
   },
   client: {
     label: "Client",
-    description: "View-only access to assigned projects",
+    description: "View-only access",
     icon: Eye,
-    badge: "secondary" as const,
   },
 };
 
-const useMemberClient = () => {
+interface UseMemberClientProps {
+  currentUserRole: string;
+}
+
+export const useMemberClient = ({ currentUserRole }: UseMemberClientProps) => {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("client");
+  const [role, setRole] = useState<Role>("client");
   const [loading, setLoading] = useState(false);
   const [lastToken, setLastToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const currentRole = ROLE_INFO[role as keyof typeof ROLE_INFO];
+  const isAdmin = useMemo(() => currentUserRole === "admin", [currentUserRole]);
 
-  async function handleInvite() {
-    if (!email) {
-      toast.error("Please enter an email address");
+  const inviteLink = useMemo(() => {
+    if (!lastToken) return null;
+    return `${window.location.origin}/invite?token=${lastToken}`;
+  }, [lastToken]);
+
+  const handleInvite = useCallback(async () => {
+    if (!email.trim()) {
+      toast.error("Enter email");
       return;
     }
 
-    setLoading(true);
     try {
+      setLoading(true);
+
       const token = await inviteUser(email, role);
+
       setLastToken(token);
-      toast.success(`Invite sent to ${email}`);
       setEmail("");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send invite");
+      toast.success("Invite sent");
+
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (e: any) {
+      toast.error(e.message ?? "Something went wrong");
     } finally {
       setLoading(false);
     }
-  }
+  }, [email, role, router, startTransition]);
 
-  async function copyToken() {
-    if (!lastToken) return;
+  const copyToken = useCallback(async () => {
+    if (!inviteLink) return;
 
-    try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/invite?token=${lastToken}`,
-      );
-      setCopied(true);
-      toast.success("Invite link copied to clipboard");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Failed to copy to clipboard");
-    }
-  }
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+
+    setTimeout(() => setCopied(false), 1500);
+  }, [inviteLink]);
+
   return {
-    ROLE_INFO,
+    // state
     email,
-    setEmail,
     role,
-    setRole,
     loading,
     lastToken,
     copied,
+    isPending,
+    inviteLink,
+    isAdmin,
+
+    // setters
+    setEmail,
+    setRole,
+
+    // actions
     handleInvite,
     copyToken,
-    currentRole,
+
+    // constants
+    ROLE_INFO,
+
+    // type
   };
 };
-
-export default useMemberClient;

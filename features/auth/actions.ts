@@ -11,7 +11,6 @@ export async function provisionUserOrg() {
 
   if (!user) throw new Error("No user");
 
-  // Create organization
   const { data: org, error: orgError } = await supabase
     .from("organizations")
     .insert({
@@ -22,7 +21,6 @@ export async function provisionUserOrg() {
 
   if (orgError) throw orgError;
 
-  // Add user as admin member
   const { error: memberError } = await supabase
     .from("organization_members")
     .insert({

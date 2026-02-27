@@ -33,11 +33,26 @@ export async function acceptInvite(token: string) {
     throw new Error("Email mismatch");
   }
 
-  await supabase.from("organization_members").insert({
-    organization_id: invite.organization_id,
-    user_id: user.id,
-    role: invite.role,
-  });
+  const { error: memberError } = await supabase
+    .from("organization_members")
+    .insert({
+      organization_id: invite.organization_id,
+      user_id: user.id,
+      role: invite.role,
+    });
 
-  await supabase.from("organization_invites").delete().eq("id", invite.id);
+  if (memberError) {
+    console.error("MEMBER INSERT FAILED:", memberError);
+    throw memberError;
+  }
+
+  const { error: deleteError } = await supabase
+    .from("organization_invites")
+    .delete()
+    .eq("id", invite.id);
+
+  if (deleteError) {
+    console.error("INVITE DELETE FAILED:", deleteError);
+    throw deleteError;
+  }
 }

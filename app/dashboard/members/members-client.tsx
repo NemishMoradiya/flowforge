@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { inviteUser } from "@/features/invites/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTransition } from "react";
 import {
   Select,
   SelectContent,
@@ -21,18 +18,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import {
-  Loader2,
-  Mail,
-  Copy,
-  Check,
-  Shield,
-  Eye,
-  UserPlus,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Loader2, Mail, Copy, Check } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { useMemberClient } from "./useMemberClient";
 
 type Person = {
   id: string;
@@ -42,23 +30,7 @@ type Person = {
   created_at: string;
 };
 
-const ROLE_INFO = {
-  admin: {
-    label: "Admin",
-    description: "Full access to all features and settings",
-    icon: Shield,
-  },
-  manager: {
-    label: "Manager",
-    description: "Can manage projects and view team members",
-    icon: UserPlus,
-  },
-  client: {
-    label: "Client",
-    description: "View-only access",
-    icon: Eye,
-  },
-};
+type Role = "admin" | "manager" | "client";
 
 export default function MembersClient({
   people,
@@ -67,52 +39,24 @@ export default function MembersClient({
   people: Person[];
   currentUserRole: string;
 }) {
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("client");
-  const [loading, setLoading] = useState(false);
-  const [lastToken, setLastToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  const router = useRouter();
-
-  const isAdmin = currentUserRole === "admin";
-  async function handleInvite() {
-    if (!email) return toast.error("Enter email");
-
-    setLoading(true);
-
-    try {
-      const token = await inviteUser(email, role);
-      setLastToken(token);
-      toast.success("Invite sent");
-      setEmail("");
-
-      startTransition(() => {
-        router.refresh();
-      });
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function copyToken() {
-    if (!lastToken) return;
-
-    await navigator.clipboard.writeText(
-      `${window.location.origin}/invite?token=${lastToken}`,
-    );
-
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
+  const {
+    email,
+    role,
+    loading,
+    lastToken,
+    copied,
+    isPending,
+    inviteLink,
+    isAdmin,
+    setEmail,
+    setRole,
+    handleInvite,
+    copyToken,
+    ROLE_INFO,
+  } = useMemberClient({ currentUserRole });
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      {/* MEMBERS LIST */}
-
       <Card>
         <CardHeader>
           <CardTitle>Team Members</CardTitle>
@@ -123,7 +67,7 @@ export default function MembersClient({
 
         <CardContent className="space-y-3">
           {isPending ? (
-            <div className="text-xs text-muted-foreground flex justify-center items-center my-10">
+            <div className="flex justify-center my-10">
               <Spinner className="size-6" />
             </div>
           ) : (
@@ -148,8 +92,6 @@ export default function MembersClient({
         </CardContent>
       </Card>
 
-      {/* INVITE FORM (ADMIN ONLY) */}
-
       {isAdmin && (
         <Card>
           <CardHeader>
@@ -168,7 +110,10 @@ export default function MembersClient({
 
             <div>
               <Label>Role</Label>
-              <Select value={role} onValueChange={setRole}>
+              <Select
+                value={role}
+                onValueChange={(value) => setRole(value as Role)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -200,16 +145,11 @@ export default function MembersClient({
         </Card>
       )}
 
-      {/* INVITE LINK */}
-
-      {lastToken && (
+      {lastToken && inviteLink && (
         <Card>
           <CardContent className="space-y-2 pt-6">
             <div className="flex gap-2">
-              <Input
-                readOnly
-                value={`${window.location.origin}/invite?token=${lastToken}`}
-              />
+              <Input readOnly value={inviteLink} />
               <Button size="icon" variant="outline" onClick={copyToken}>
                 {copied ? <Check /> : <Copy />}
               </Button>

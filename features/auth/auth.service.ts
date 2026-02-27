@@ -13,10 +13,9 @@ export async function register(
 
   if (error) throw error;
 
-  if (data.user) {
-    if (!token) {
-      await provisionUserOrg();
-    }
+  // Only create org if this is NOT invite signup
+  if (data.user && !token) {
+    await provisionUserOrg();
   }
 
   return data;
